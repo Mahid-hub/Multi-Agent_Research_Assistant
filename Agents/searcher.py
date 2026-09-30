@@ -8,14 +8,24 @@ from src.state import ResearchState
 # tavily_client = TavilyClient(api_key=os.getenv("TAVILY_API_KEY"))
 
 def search_web(state: ResearchState) -> ResearchState:
-    results = DDGS().text(
-        state['tasks'][0],
-        max_results=5
-    )
+    search_results = []
+    
+    for task in state['tasks']:
+        search_query = f"{state['question']} {task}"
+        
+        results = DDGS().text(
+            search_query,
+            max_results=5
+        )
+        
+        search_results.append({
+            "task": task,
+            "results": results
+        })
     # results = tavily_client.search(
-    #     query=state['tasks'][0],
+    #     query=task,
     #     max_results=5
     # )
 
-    state['search_result'] = results
+    state['search_result'] = search_results
     return state

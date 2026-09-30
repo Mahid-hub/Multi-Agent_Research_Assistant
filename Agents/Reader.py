@@ -21,14 +21,18 @@ structured_llm = llm.with_structured_output(ReaderResult)
 def reader(state: ResearchState) -> ResearchState:
     reader_results = []
     
-    for item in state["search_result"]:
-        result = read_content(item["body"])
+    for searchResult in state['search_result']:
+        task = searchResult['task']
+    
+        for item in searchResult["results"]:
+            result = read_content(item["body"])
 
-        reader_results.append({
-            "title": item["title"],
-            "url": item["href"],
-            "summary": result.summary,
-        })
+            reader_results.append({
+                "task": task,
+                "title": item["title"],
+                "url": item["href"],
+                "summary": result.summary,
+            })
     
     state['reader_results'] = reader_results
     return state
