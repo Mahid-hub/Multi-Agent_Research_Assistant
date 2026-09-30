@@ -6,6 +6,10 @@ class ResearchState(TypedDict):
     question: str
     tasks: list[str]
     search_result: list
+    reader_results: list
     
 class ResearchTasks(BaseModel):
     tasks: list[str]
+    
+class ReaderResult(BaseModel):
+    summary: str
