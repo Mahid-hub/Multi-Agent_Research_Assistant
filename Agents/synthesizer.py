@@ -21,6 +21,9 @@ structured_llm = llm.with_structured_output(FinalReport)
 
 @observe(name="Synthesizer", as_type="chain")
 def synthesize_report(state: ResearchState) -> ResearchState:
+    if not state["reader_results"]:
+        raise ValueError("No research summaries available.")
+    
     result = ""
     for i, item in enumerate(state["reader_results"], start=1):
         result += f"""
@@ -51,5 +54,6 @@ def synthesize_report(state: ResearchState) -> ResearchState:
                 {result}
                 """
 
-    state['final_report'] = structured_llm.invoke(prompt)
+    result = structured_llm.invoke(prompt)
+    state['final_report'] = result.report
     return state

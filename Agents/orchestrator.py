@@ -34,6 +34,9 @@ def orchestrator(state: ResearchState) -> ResearchState:
             """
 
     result = structured_llm.invoke(prompt)
-    state["tasks"] = result.tasks
 
+    if not result.tasks:
+        raise ValueError("No research tasks were generated.")
+
+    state["tasks"] = result.tasks
     return state

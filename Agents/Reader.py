@@ -21,20 +21,23 @@ structured_llm = llm.with_structured_output(ReaderResult)
 
 @observe(name="Reader", as_type="agent")
 def reader(state: ResearchState) -> ResearchState:
+    if not state["search_result"]:
+        raise ValueError("No search results available.")
+    
     reader_results = []
     
     for searchResult in state['search_result']:
         task = searchResult['task']
     
         for item in searchResult["results"]:
-            # result = read_content(item["body"])
-            result = read_content(item["content"])
-            
+            if not item.get("content"):
+                print(f"No content available for: {item['title']}")
+                continue
 
+            result = read_content(item["content"])
             reader_results.append({
                 "task": task,
                 "title": item["title"],
-                # "url": item["href"],
                 "url": item["url"],
                 "summary": result.summary,
             })
@@ -42,19 +45,20 @@ def reader(state: ResearchState) -> ResearchState:
     state['reader_results'] = reader_results
     return state
 
+
 def read_content(content: str) -> ReaderResult:
     prompt = f"""
-You are the Reader Agent in a multi-agent research assistant.
-Analyze the provided research content.
-Extract the important information that would help
-answer the original research task.
-Provide:
-1. A concise summary.
-2. The most important key points.
-Do not invent information.
-Research content:
-{content}
-"""
+                You are the Reader Agent in a multi-agent research assistant.
+                Analyze the provided research content.
+                Extract the important information that would help
+                answer the original research task.
+                Provide:
+                1. A concise summary.
+                2. The most important key points.
+                Do not invent information.
+                Research content:
+                {content}
+                """
 
     result = structured_llm.invoke(prompt)
     return result
