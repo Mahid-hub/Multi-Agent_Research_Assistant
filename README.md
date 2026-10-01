@@ -1,91 +1,89 @@
 # AI Research Assistant
 
-This project is a LangGraph-powered multi-agent research assistant that takes a user question, breaks it into sub-tasks, searches for relevant sources, reads and summarizes the results, and synthesizes a final research report.
+## Project
 
-## What it does
+An interactive, multi-agent research assistant. Enter a research question and the application decomposes it into focused tasks, searches the web, summarizes source content, and synthesizes a final report.
 
-The system follows a simple research workflow:
+## Architecture
 
-1. The orchestrator decomposes a user question into several research tasks.
-2. The search agent queries the web for each task using Tavily.
-3. The reader agent reviews the returned content and extracts concise summaries.
-4. The synthesizer combines the findings into one final report.
+The workflow is a linear LangGraph state graph. Each node receives and updates shared research state, which contains the question, generated tasks, search results, reader summaries, and final report.
 
-The pipeline is built in Python using LangGraph and OpenAI-compatible models via Groq.
+```mermaid
+flowchart LR
+    A[Research question] --> B[Orchestrator]
+    B --> C[Tavily search]
+    C --> D[Reader]
+    D --> E[Synthesizer]
+    E --> F[Final report]
+```
 
-## Project structure
+Main modules:
 
-- `main.py` - entry point for running the research workflow
-- `Agents/orchestrator.py` - breaks the research question into tasks
-- `Agents/searcher.py` - searches the web for each task
-- `Agents/reader.py` - summarizes content from each search result
-- `Agents/synthesizer.py` - combines summaries into the final report
-- `src/graph.py` - defines the state graph and workflow connections
-- `src/state.py` - typed state and structured output models
-- `requirements.txt` - project dependencies
+- `main.py` collects the question, invokes the graph, and prints the report.
+- `src/graph.py` connects the agents in execution order.
+- `src/state.py` defines the shared state and Pydantic structured-output models.
+- `Agents/orchestrator.py` creates research tasks with the Groq-hosted model.
+- `Agents/searcher.py` retrieves web results through Tavily.
+- `Agents/reader.py` summarizes source content with the model.
+- `Agents/synthesizer.py` combines summaries into the final report.
 
-## Tech stack
+## Technologies
 
 - Python
-- LangGraph
-- LangChain
-- OpenAI-compatible LLM via Groq
-- Tavily search API
-- Python-dotenv
-- Langfuse observability
+- LangGraph for workflow orchestration
+- LangChain and `langchain-openai` for model calls and structured outputs
+- Groq's OpenAI-compatible API, using `openai/gpt-oss-20b`
+- Tavily Search API for web research
+- Pydantic for output schemas
+- python-dotenv for loading local environment variables
+- Langfuse for tracing agent and chain execution
 
-## Setup
+## Install
 
-1. Create and activate a virtual environment:
+Create a virtual environment, activate it, and install the dependencies from the project root:
 
-   ```bash
-   python -m venv .venv
-   .venv\Scripts\activate
-   ```
+```powershell
+python -m venv .venv
+.venv\Scripts\Activate.ps1
+python -m pip install -r requirements.txt
+```
 
-2. Install dependencies:
+For Command Prompt, activate with `.venv\Scripts\activate.bat`. On macOS or Linux, use `source .venv/bin/activate`.
 
-   ```bash
-   pip install -r requirements.txt
-   ```
+## Configure `.env`
 
-3. Create a `.env` file in the project root with your API keys:
+Create a `.env` file in the project root. Add the keys for Groq and Tavily, and the Langfuse credentials for tracing:
 
-   ```env
-   GROQ_API_KEY=your_groq_api_key
-   TAVILY_API_KEY=your_tavily_api_key
-   ```
+```dotenv
+GROQ_API_KEY=your_groq_api_key
+TAVILY_API_KEY=your_tavily_api_key
+LANGFUSE_SECRET_KEY=your_langfuse_secret_key
+LANGFUSE_PUBLIC_KEY=your_langfuse_public_key
+LANGFUSE_HOST=https://cloud.langfuse.com
+```
 
-   Optional Langfuse configuration can also be added if you want tracing/telemetry enabled.
+Use the Langfuse host for your account's region or self-hosted instance if it differs from the example. Keep `.env` private and do not commit API keys.
 
-## Run the app
+## Run
 
-```bash
+From the project root, run:
+
+```powershell
 python main.py
 ```
 
-Then enter a research question when prompted, for example:
+Enter a research question when prompted, for example: `What are the main benefits and risks of microservices architecture?`
 
-```text
-Enter your research question: What are the main benefits and risks of using microservices architecture?
-```
+## Multi-agent workflow
 
-## Example workflow
+1. **Orchestrator:** asks the model to break the question into three to five independently researchable tasks. The response follows the `ResearchTasks` schema.
+2. **Searcher:** sends each task to Tavily and stores the returned results in the shared state.
+3. **Reader:** asks the model to extract a concise summary from each result's content. The response follows the `ReaderResult` schema and retains the source title and URL.
+4. **Synthesizer:** provides the research question and reader summaries to the model, which returns a report following the `FinalReport` schema.
+5. **CLI:** prints the resulting report. An empty question or missing final report is reported as an error by `main.py`.
 
-The app will:
+## Langfuse instrumentation
 
-- create research tasks like "benefits of microservices", "risks of microservices", and "when microservices are appropriate"
-- search for sources related to each task
-- extract summaries from the results
-- generate a final synthesized report based only on the collected research summaries
+The agents use Langfuse's `@observe` decorator to create named traces for the orchestrator, searcher, reader, and synthesizer. `main.py` also creates a LangChain `CallbackHandler` and passes it to `graph.invoke`, linking supported LangChain operations to the run trace.
 
-## Notes
-
-- The project uses the Groq OpenAI-compatible endpoint with the model `openai/gpt-oss-20b`.
-- Search is performed through Tavily, with a commented-out DDGS option also present in the code.
-- `src/state.py` defines the workflow state and expected structured outputs for tasks, reader summaries, and the final report.
-- The graph is assembled in `src/graph.py` with a linear flow: orchestrator -> search -> reader -> synthesize.
-
-## License
-
-This project is for educational and research use. Adjust the license if you plan to distribute or publish it.
+With the Langfuse keys configured in `.env`, run the application and inspect the resulting traces in your Langfuse project. The traces help you follow execution across agents and review model and search operations. Without valid Langfuse credentials, tracing may be unavailable even when the research providers are configured.
