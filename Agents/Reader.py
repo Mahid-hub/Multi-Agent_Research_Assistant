@@ -2,6 +2,7 @@ import os
 from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI
 from src.state import ReaderResult, ResearchState
+from langfuse import observe
 
 load_dotenv()
 
@@ -18,6 +19,7 @@ llm = ChatOpenAI(
 
 structured_llm = llm.with_structured_output(ReaderResult)
 
+@observe(name="Reader", as_type="agent")
 def reader(state: ResearchState) -> ResearchState:
     reader_results = []
     
@@ -25,12 +27,15 @@ def reader(state: ResearchState) -> ResearchState:
         task = searchResult['task']
     
         for item in searchResult["results"]:
-            result = read_content(item["body"])
+            # result = read_content(item["body"])
+            result = read_content(item["content"])
+            
 
             reader_results.append({
                 "task": task,
                 "title": item["title"],
-                "url": item["href"],
+                # "url": item["href"],
+                "url": item["url"],
                 "summary": result.summary,
             })
     

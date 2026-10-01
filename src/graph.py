@@ -3,7 +3,7 @@ from src.state import ResearchState
 from Agents.orchestrator import orchestrator
 from Agents.searcher import search_web
 from Agents.reader import reader
-from src.synthesizer import synthesize_report
+from Agents.synthesizer import synthesize_report
 
 builder = StateGraph(ResearchState)
 

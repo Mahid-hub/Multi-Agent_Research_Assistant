@@ -2,6 +2,7 @@ import os
 from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI
 from src.state import FinalReport, ResearchState
+from langfuse import observe
 
 load_dotenv()
 
@@ -18,6 +19,7 @@ llm = ChatOpenAI(
 
 structured_llm = llm.with_structured_output(FinalReport)
 
+@observe(name="Synthesizer", as_type="chain")
 def synthesize_report(state: ResearchState) -> ResearchState:
     result = ""
     for i, item in enumerate(state["reader_results"], start=1):

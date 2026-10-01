@@ -2,6 +2,7 @@ import os
 from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI
 from src.state import ResearchState, ResearchTasks
+from langfuse import observe
 
 load_dotenv()
 
@@ -18,6 +19,7 @@ llm = ChatOpenAI(
 
 structured_llm = llm.with_structured_output(ResearchTasks)
 
+@observe(name="Orchestrator", as_type="agent")
 def orchestrator(state: ResearchState) -> ResearchState:
     question = state['question']
     
