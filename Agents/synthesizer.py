@@ -25,35 +25,40 @@ def synthesize_report(state: ResearchState) -> ResearchState:
         raise ValueError("No research summaries available.")
     
     result = ""
-    for i, item in enumerate(state["reader_results"], start=1):
-        result += f"""
-                    Research Task: {item["task"]}
-                    Source: {item["title"]}
-                    URL: {item["url"]}
-                    Summary: {item["summary"]}
+    try:
+        for i, item in enumerate(state["reader_results"], start=1):
+            result += f"""
+                        Research Task: {item["task"]}
+                        Source: {item["title"]}
+                        URL: {item["url"]}
+                        Summary: {item["summary"]}
+                        """
+
+        prompt = f"""
+                    You are the final research synthesizer.
+                    Research question:
+                    {state["question"]}
+                    Using ONLY the research summaries below, write a concise,
+                    well-structured research report.
+                    When multiple sources support the same fact,
+                    prefer reliable and authoritative sources where possible.
+                    Do not treat a source as authoritative merely because
+                    it appears in the research results.
+                    If sources conflict, do not silently choose one.
+                    Present the disagreement or uncertainty.
+                    Requirements:
+                    - Answer the research question directly.
+                    - Combine information from the sources.
+                    - Do not invent facts.
+                    - Keep the report concise.
+                    Research:
+                    {result}
                     """
 
-    prompt = f"""
-                You are the final research synthesizer.
-                Research question:
-                {state["question"]}
-                Using ONLY the research summaries below, write a concise,
-                well-structured research report.
-                When multiple sources support the same fact,
-                prefer reliable and authoritative sources where possible.
-                Do not treat a source as authoritative merely because
-                it appears in the research results.
-                If sources conflict, do not silently choose one.
-                Present the disagreement or uncertainty.
-                Requirements:
-                - Answer the research question directly.
-                - Combine information from the sources.
-                - Do not invent facts.
-                - Keep the report concise.
-                Research:
-                {result}
-                """
-
-    result = structured_llm.invoke(prompt)
-    state['final_report'] = result.report
-    return state
+        result = structured_llm.invoke(prompt)
+        state['final_report'] = result.report
+        return state
+    
+    except Exception as e:
+        print(f"Synthesizer error: {e}")
+        raise

@@ -38,5 +38,11 @@ def orchestrator(state: ResearchState) -> ResearchState:
     if not result.tasks:
         raise ValueError("No research tasks were generated.")
 
-    state["tasks"] = result.tasks
-    return state
+    try:
+        result = structured_llm.invoke(prompt)
+        state["tasks"] = result.tasks
+        return state
+
+    except Exception as e:
+        print(f"Orchestrator error: {e}")
+        raise

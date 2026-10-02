@@ -12,21 +12,26 @@ def search_web(state: ResearchState) -> ResearchState:
     if not state["tasks"]:
         raise ValueError("No research tasks available.")
     
-    search_results = []
-    
-    for task in state['tasks']:        
-        results = tavily_client.search(
-            query=task,
-            max_results=5
-        )
+    try:
+        search_results = []
         
-        if not results["results"]:
-            print(f"No results found for: {task}")
-    
-        search_results.append({
-            "task": task,
-            "results": results["results"] 
-        })
+        for task in state['tasks']:        
+            results = tavily_client.search(
+                query=task,
+                max_results=5
+            )
+            
+            if not results["results"]:
+                print(f"No results found for: {task}")
+        
+            search_results.append({
+                "task": task,
+                "results": results["results"] 
+            })
 
-    state['search_result'] = search_results
-    return state
+        state['search_result'] = search_results
+        return state
+    
+    except Exception as e:
+        print(f"Searcher error: {e}")
+        raise

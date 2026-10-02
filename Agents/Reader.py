@@ -25,26 +25,29 @@ def reader(state: ResearchState) -> ResearchState:
         raise ValueError("No search results available.")
     
     reader_results = []
-    
-    for searchResult in state['search_result']:
-        task = searchResult['task']
-    
-        for item in searchResult["results"]:
-            if not item.get("content"):
-                print(f"No content available for: {item['title']}")
-                continue
+    try:
+        for searchResult in state['search_result']:
+            task = searchResult['task']
+        
+            for item in searchResult["results"]:
+                if not item.get("content"):
+                    print(f"No content available for: {item['title']}")
+                    continue
 
-            result = read_content(item["content"])
-            reader_results.append({
-                "task": task,
-                "title": item["title"],
-                "url": item["url"],
-                "summary": result.summary,
-            })
+                result = read_content(item["content"])
+                reader_results.append({
+                    "task": task,
+                    "title": item["title"],
+                    "url": item["url"],
+                    "summary": result.summary,
+                })
+        
+        state['reader_results'] = reader_results
+        return state
     
-    state['reader_results'] = reader_results
-    return state
-
+    except Exception as e:
+        print(f"Reader error: {e}")
+        raise
 
 def read_content(content: str) -> ReaderResult:
     prompt = f"""
