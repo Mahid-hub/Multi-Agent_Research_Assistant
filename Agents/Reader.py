@@ -1,4 +1,6 @@
 import os
+import asyncio
+from MCP.client import Client, get_server_parameters
 from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI
 from src.state import ReaderResult, ResearchState
@@ -19,6 +21,14 @@ llm = ChatOpenAI(
 
 structured_llm = llm.with_structured_output(ReaderResult)
 
+async def fetch_url(url):
+    server_params = get_server_parameters()
+
+    async with Client(server_params) as client:
+        result = await client.call_tool("fetch_url", {"url": url})
+        return result
+    
+    
 @observe(name="Reader", as_type="agent")
 def reader(state: ResearchState) -> ResearchState:
     if not state["search_result"]:
@@ -30,16 +40,20 @@ def reader(state: ResearchState) -> ResearchState:
             task = searchResult['task']
         
             for item in searchResult["results"]:
-                if not item.get("content"):
-                    print(f"No content available for: {item['title']}")
+                url = item.get("url")
+                if not url:
+                    print("No URL available.")
                     continue
 
-                result = read_content(item["content"])
+                result = asyncio.run(fetch_url(url))
+                content = result.content[0].text[:5000]
+                summary = read_content(content)
+                
                 reader_results.append({
                     "task": task,
                     "title": item["title"],
-                    "url": item["url"],
-                    "summary": result.summary,
+                    "url": url,
+                    "summary": summary.summary,
                 })
         
         state['reader_results'] = reader_results
@@ -51,17 +65,15 @@ def reader(state: ResearchState) -> ResearchState:
 
 def read_content(content: str) -> ReaderResult:
     prompt = f"""
-                You are the Reader Agent in a multi-agent research assistant.
-                Analyze the provided research content.
-                Extract the important information that would help
-                answer the original research task.
-                Provide:
-                1. A concise summary.
-                2. The most important key points.
-                Do not invent information.
-                Research content:
-                {content}
-                """
+            You are the Reader Agent in a multi-agent research assistant.
+            Analyze the provided research content and extract the important
+            information that would help answer the research task.
+            Return a concise summary containing the important facts.
+            Do not invent information.
+            Only use information from the provided content.
+            Research content:
+            {content}
+            """
 
     result = structured_llm.invoke(prompt)
     return result

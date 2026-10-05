@@ -74,6 +74,16 @@ python main.py
 
 Enter a research question when prompted, for example: `What are the main benefits and risks of microservices architecture?`
 
+## MCP tools
+
+From the project root, run the MCP client with:
+
+```powershell
+python -m MCP.client
+```
+
+The client starts the stdio server as a Python module, lists the available tools, runs a local connectivity test, and performs a Tavily search. The search requires a valid `TAVILY_API_KEY` in `.env`.
+
 ## Multi-agent workflow
 
 1. **Orchestrator:** asks the model to break the question into three to five independently researchable tasks. The response follows the `ResearchTasks` schema.
