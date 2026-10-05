@@ -1,8 +1,7 @@
 import os
 import sys
-import asyncio
 from pathlib import Path
-from mcp import Client, StdioServerParameters
+from mcp import StdioServerParameters
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 SERVER_PATH = PROJECT_ROOT / "MCP" / "server.py"
