@@ -1,5 +1,4 @@
 from langfuse import propagate_attributes
-
 from src.graph import graph
 from langfuse.langchain import CallbackHandler
 
